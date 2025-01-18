@@ -7,11 +7,28 @@
 
 import torch
 
+class SE2_constructor():
+    """"""
+    def __init__(self):
+        self.dim = 3
+    
+    def L(self, g_1, g_2):
+        return _L(g_1, g_2)
+    
+    def L_inv(self, g_1, g_2):
+        return _L_inv(g_1, g_2)
+    
+    def log(self, g):
+        return _log(g)
+    
+    def exp(self, A):
+        return _exp(A)
+
 def mod_offset(x, period, offset):
     """Compute `x` modulo `period` with offset `offset`."""
     return x - (x - offset)//period * period
 
-def L(g_1, g_2):
+def _L(g_1, g_2):
     """
     Left multiplication of `g_2` by `g_1`.
     """
@@ -30,7 +47,7 @@ def L(g_1, g_2):
     g[..., 2] = θ_1 + θ_2
     return g
 
-def L_inv(g_1, g_2):
+def _L_inv(g_1, g_2):
     """
     Left multiplication of `g_2` by `g_1^-1`.
     """
@@ -49,17 +66,17 @@ def L_inv(g_1, g_2):
     g[..., 2] = θ_2 - θ_1
     return g
 
-def log(g):
+def _log(g):
     """
     Lie group logarithm of `g`, i.e. `A` in Lie algebra such that `exp(A) = g`.
     """
     A = torch.zeros_like(g)
     θ = g[..., 2]
     
-    # parallel = θ == 0.
+    parallel = θ == 0.
     # Maybe more stable?
-    ε = 1e-8
-    parallel = θ.abs() < ε
+    # ε = 1e-8
+    # parallel = θ.abs() < ε
 
     A[parallel, 0] = g[parallel, 0]
     A[parallel, 1] = g[parallel, 1]
@@ -73,7 +90,7 @@ def log(g):
     A[~parallel, 2] = θ_not_par
     return A
 
-def exp(A):
+def _exp(A):
     """
     Lie group exponential of `A`, i.e. `g` in Lie group such that `exp(A) = g`.
     """
