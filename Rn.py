@@ -5,7 +5,7 @@
     Various tools related to R^n
 """
 
-class Rn_constructor():
+class Rn():
     """"""
     def __init__(self, n):
         self.dim = n

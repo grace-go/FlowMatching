@@ -7,7 +7,7 @@
 
 import torch
 
-class SE2_constructor():
+class SE2():
     """"""
     def __init__(self):
         self.dim = 3
