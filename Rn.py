@@ -24,12 +24,12 @@ class Rn():
     
     def log(self, g):
         """
-        Lie group logarithm of `g`, i.e. `A` in Lie algebra such that `exp(A) = g`.
+        Lie group logarithm of `g`, i.e. `g`.
         """
         return g.clone()
     
     def exp(self, A):
         """
-        Lie group exponential of `A`, i.e. `g` in Lie group such that `exp(A) = g`.
+        Lie group exponential of `A`, i.e. `A`.
         """
         return A.clone()
