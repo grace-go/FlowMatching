@@ -28,7 +28,7 @@ class SE2():
 
         g[..., 0] = x_1 + cos * x_2 - sin * y_2
         g[..., 1] = y_1 + sin * x_2 + cos * y_2
-        g[..., 2] = θ_1 + θ_2
+        g[..., 2] = _mod_offset(θ_1 + θ_2, 2 * torch.pi, -torch.pi)
         return g
     
     def L_inv(self, g_1, g_2):
@@ -47,7 +47,7 @@ class SE2():
 
         g[..., 0] = cos * (x_2 - x_1) + sin * (y_2 - y_1)
         g[..., 1] = -sin * (x_2 - x_1) + cos * (y_2 - y_1)
-        g[..., 2] = θ_2 - θ_1
+        g[..., 2] = _mod_offset(θ_2 - θ_1, 2 * torch.pi, -torch.pi)
         return g
     
     def log(self, g):
@@ -91,7 +91,7 @@ class SE2():
         sin = torch.sin(c3_not_par/2.)
         g[~parallel, 0] = (c1_not_par * cos - c2_not_par * sin) * sin / (c3_not_par/2.)
         g[~parallel, 1] = (c1_not_par * sin + c2_not_par * cos) * sin / (c3_not_par/2.)
-        g[~parallel, 2] = _mod_offset(c3_not_par, 2 * torch.pi, 0.)
+        g[~parallel, 2] = _mod_offset(c3_not_par, 2 * torch.pi, -torch.pi)
         return g
     
     def __repr__(self):
