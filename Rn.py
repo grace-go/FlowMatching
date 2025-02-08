@@ -33,3 +33,6 @@ class Rn():
         Lie group exponential of `A`, i.e. `A`.
         """
         return A.clone()
+    
+    def __repr__(self):
+        return f"R^{self.dim}"

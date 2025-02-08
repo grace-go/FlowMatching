@@ -93,6 +93,9 @@ class SE2():
         g[~parallel, 1] = (c1_not_par * sin + c2_not_par * cos) * sin / (c3_not_par/2.)
         g[~parallel, 2] = _mod_offset(c3_not_par, 2 * torch.pi, 0.)
         return g
+    
+    def __repr__(self):
+        return "SE(2)"
 
 def _mod_offset(x, period, offset):
     """Compute `x` modulo `period` with offset `offset`."""
