@@ -55,12 +55,14 @@ class SE2():
         Lie group logarithm of `g`, i.e. `A` in Lie algebra such that `exp(A) = g`.
         """
         A = torch.zeros_like(g)
-        θ = g[..., 2]
+        θ = _mod_offset(g[..., 2], 2 * torch.pi, -torch.pi)
         
         parallel = θ == 0.
         # Maybe more stable?
         # ε = 1e-8
         # parallel = θ.abs() < ε
+
+        # Why is there no tanc function?
 
         A[parallel, 0] = g[parallel, 0]
         A[parallel, 1] = g[parallel, 1]
@@ -73,25 +75,21 @@ class SE2():
         A[~parallel, 1] = θ_not_par/2. * (-x_not_par + y_not_par / tan)
         A[~parallel, 2] = θ_not_par
         return A
-    
+
     def exp(self, A):
         """
         Lie group exponential of `A`, i.e. `g` in Lie group such that `exp(A) = g`.
         """
         g = torch.zeros_like(A)
+        c1 = A[..., 0]
+        c2 = A[..., 1]
         c3 = A[..., 2]
-        parallel = c3 == 0.
-        g[parallel, 0] = A[parallel, 0]
-        g[parallel, 1] = A[parallel, 1]
-
-        c1_not_par = A[~parallel, 0]
-        c2_not_par = A[~parallel, 1]
-        c3_not_par = A[~parallel, 2]
-        cos = torch.cos(c3_not_par/2.)
-        sin = torch.sin(c3_not_par/2.)
-        g[~parallel, 0] = (c1_not_par * cos - c2_not_par * sin) * sin / (c3_not_par/2.)
-        g[~parallel, 1] = (c1_not_par * sin + c2_not_par * cos) * sin / (c3_not_par/2.)
-        g[~parallel, 2] = _mod_offset(c3_not_par, 2 * torch.pi, -torch.pi)
+        cos = torch.cos(c3/2.)
+        sin = torch.sin(c3/2.)
+        sinc = torch.sinc(c3/2.)
+        g[..., 0] = (c1 * cos - c2 * sin) * sinc
+        g[..., 1] = (c1 * sin + c2 * cos) * sinc
+        g[..., 2] = _mod_offset(c3, 2 * torch.pi, -torch.pi)
         return g
     
     def __repr__(self):
