@@ -84,7 +84,7 @@ class SE2():
         
         cos = torch.cos(c3/2.)
         sin = torch.sin(c3/2.)
-        sinc = torch.sinc(c3/2.)
+        sinc = torch.sinc(c3/(2. * torch.pi)) # torch.sinc(x) = sin(pi x) / (pi x)
 
         g[..., 0] = (c1 * cos - c2 * sin) * sinc
         g[..., 1] = (c1 * sin + c2 * cos) * sinc
