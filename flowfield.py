@@ -104,13 +104,16 @@ class ShortCutField(nn.Module):
     
 
 class LogarithmicDistance(nn.Module):
-    def __init__(self, G, w):
+    def __init__(self, w):
         super().__init__()
-        self.G = G
-        self.ρ = lambda A_1, A_2: self.ρ_c(A_1, A_2, w)
+        self.w = w
+        self.ρ = lambda A_1, A_2: self.ρ_c_normalised(A_1, A_2, w)
     
-    def ρ_c(self, A_1, A_2, w):
-        return (w**2 * (A_2 - A_1)**2).sum(-1)
+    def ρ_c_normalised(self, A_1, A_2, w):
+        return (w**2 * (A_2 - A_1)**2).mean(-1)
     
     def forward(self, input, target):
         return self.ρ(input, target).mean(-1)
+
+    def __repr__(self):
+        return f"LogarithmicDistance{tuple(self.w.numpy())}"
