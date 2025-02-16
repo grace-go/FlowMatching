@@ -101,3 +101,16 @@ class ShortCutField(nn.Module):
             batch_loss.backward()
             optimizer.step()
         return losses.mean()
+    
+
+class LogarithmicDistance(nn.Module):
+    def __init__(self, G, w):
+        super().__init__()
+        self.G = G
+        self.ρ = lambda A_1, A_2: self.ρ_c(A_1, A_2, w)
+    
+    def ρ_c(self, A_1, A_2, w):
+        return (w**2 * (A_2 - A_1)**2).sum(-1)
+    
+    def forward(self, input, target):
+        return self.ρ(input, target).mean(-1)
