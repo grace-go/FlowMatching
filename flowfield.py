@@ -4,13 +4,12 @@ import numpy as np
 from tqdm import tqdm
 
 class FlowField(nn.Module):
-    def __init__(self, G, H=64):
+    def __init__(self, G, H=64, L=2):
         super().__init__()
         self.G = G
         self.network = nn.Sequential(
             nn.Linear(G.dim+1, H), nn.ReLU(),
-            nn.Linear(H, H), nn.ReLU(),
-            nn.Linear(H, H), nn.ReLU(),
+            *(L*(nn.Linear(H, H), nn.ReLU(),)),
             nn.Linear(H, G.dim)
         )
 
@@ -32,7 +31,7 @@ class FlowField(nn.Module):
             dynamic_ncols=True,
             unit="batch"
         ):
-            t = torch.rand(len(g_1), 1)
+            t = torch.rand(len(g_1), 1).to(device)
             g_0, g_1 = g_0.to(device), g_1.to(device)
             A_t = self.G.log(self.G.L_inv(g_0, g_1))
             g_t = self.G.L(g_0, self.G.exp(t * A_t))
@@ -44,13 +43,12 @@ class FlowField(nn.Module):
         return losses.mean()
     
 class ShortCutField(nn.Module):
-    def __init__(self, G, H=64):
+    def __init__(self, G, H=64, L=2):
         super().__init__()
         self.G = G
         self.network = nn.Sequential(
             nn.Linear(G.dim+2, H), nn.ReLU(),
-            nn.Linear(H, H), nn.ReLU(),
-            nn.Linear(H, H), nn.ReLU(),
+            *(L*(nn.Linear(H, H), nn.ReLU(),)),
             nn.Linear(H, G.dim)
         )
 
@@ -74,11 +72,11 @@ class ShortCutField(nn.Module):
             unit="batch"
         ):
             N_total = len(g_1) # Total number of samples in batch.
-            t = torch.rand(len(g_1), 1)
+            t = torch.rand(len(g_1), 1).to(device)
             g_0, g_1 = g_0.to(device), g_1.to(device)
             g_t = self.G.L(g_0, self.G.exp(t * self.G.log(self.G.L_inv(g_0, g_1))))
             
-            Δt = torch.rand(N_total, 1) * (1 - t) # t + Δt <= 1.
+            Δt = torch.rand(N_total, 1).to(device) * (1 - t) # t + Δt <= 1.
             A_t = torch.zeros_like(g_t)
             N_SG = int(k * N_total) # Number of samples used for self-consistency loss.
 

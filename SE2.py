@@ -91,6 +91,21 @@ class SE2():
         g[..., 2] = _mod_offset(c3, 2 * torch.pi, -torch.pi)
         return g
     
+    def L_star(self, g, A):
+        """
+        Push-forward of `A` under left multiplication by `g`.
+        """
+        B = torch.zeros_like(A)
+        θ = g[..., 2]
+
+        cos = torch.cos(θ)
+        sin = torch.sin(θ)
+
+        B[..., 0] = cos * A[..., 0] - sin * A[1]
+        B[..., 1] = sin * A[..., 0] + cos * A[1]
+        B[..., 2] = A[..., 2]
+        return B
+    
     def __repr__(self):
         return "SE(2)"
 
