@@ -30,10 +30,10 @@ class SO3():
         `exp(A) = R`.
 
         Pytorch does not actually have a matrix log built in, but for SO(3) it
-        is not too complicated, see https://en.wikipedia.org/wiki/3D_rotation_group#Logarithm_map
+        is not too complicated.
         """
-        q = torch.arccos((R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) - 1) / 2)[..., None, None]
-        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(q / torch.pi))
+        q = torch.arccos((R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) - 1) / 2)
+        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(q[..., None, None] / torch.pi))
 
     def exp(self, A):
         """
