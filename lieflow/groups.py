@@ -357,7 +357,7 @@ class SO3(MatrixGroup):
         Compute the components of Lie algebra basis `A` with respect to the
         basis given by `self.lie_algebra_basis`.
         """
-        return torch.cat((A[..., 2, 1], A[..., 0, 2], A[..., 1, 0]), dim=-1)
+        return torch.cat((A[..., 2, 1, None], A[..., 0, 2, None], A[..., 1, 0, None]), dim=-1)
     
     def __repr__(self):
         return "SO(3)"

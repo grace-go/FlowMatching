@@ -225,14 +225,14 @@ class FlowFieldMatrixGroup(nn.Module):
         )
 
     def forward(self, R_t, t):
-        return self.network(torch.cat((R_t.flatten(start_dim=-2, end_dim=-1), t), dim=-1))
+        return self.network(torch.cat((R_t.flatten(start_dim=-2, end_dim=-1), t.flatten(start_dim=-2, end_dim=-1)), dim=-1))
     
     def step(self, R_t, t, Δt):
-        t = t.view(1, 1).expand(R_t.shape[0], 1)
+        t = t.view(1, 1).expand(R_t.shape[0], 1, 1)
         # Components w.r.t. Lie algebra basis.
         a_t = self(R_t, t)
         basis = self.G.lie_algebra_basis
-        A_t = a_t[..., None] * basis
+        A_t = (a_t[..., None, None] * basis).sum(-3)
         return self.G.L(R_t, self.G.exp(Δt * A_t))
     
     def train_network(self, device, train_loader, optimizer, loss):
@@ -246,7 +246,7 @@ class FlowFieldMatrixGroup(nn.Module):
             dynamic_ncols=True,
             unit="batch"
         ):
-            t = torch.rand(len(R_1), 1).to(device)
+            t = torch.rand(len(R_1), 1, 1).to(device)
             R_0, R_1 = R_0.to(device), R_1.to(device)
             A_t = self.G.log(self.G.L_inv(R_0, R_1))
             R_t = self.G.L(R_0, self.G.exp(t * A_t))
@@ -290,11 +290,11 @@ class ShortCutFieldMatrixGroup(nn.Module):
         )
 
     def forward(self, R_t, t, Δt):
-        return self.network(torch.cat((R_t.flatten(start_dim=-2, end_dim=-1), t, Δt), dim=-1))
+        return self.network(torch.cat((R_t.flatten(start_dim=-2, end_dim=-1), t.flatten(start_dim=-2, end_dim=-1), Δt.flatten(start_dim=-2, end_dim=-1)), dim=-1))
     
     def step(self, R_t, t, Δt):
-        t = t.view(1, 1).expand(R_t.shape[0], 1)
-        Δt = Δt.view(1, 1).expand(R_t.shape[0], 1)
+        t = t.view(1, 1).expand(R_t.shape[0], 1, 1)
+        Δt = Δt.view(1, 1).expand(R_t.shape[0], 1, 1)
         # Components w.r.t. Lie algebra basis.
         a_t = self(R_t, t, Δt)
         basis = self.G.lie_algebra_basis
@@ -318,7 +318,7 @@ class ShortCutFieldMatrixGroup(nn.Module):
             R_0, R_1 = R_0.to(device), R_1.to(device)
             R_t = self.G.L(R_0, self.G.exp(t * self.G.log(self.G.L_inv(R_0, R_1))))
             
-            Δt = torch.rand(N_total, 1).to(device) * (1 - t) # t + Δt <= 1.
+            Δt = torch.rand(N_total, 1, 1).to(device) * (1 - t) # t + Δt <= 1.
             A_t = torch.zeros_like(R_t)
             N_SG = int(k * N_total) # Number of samples used for self-consistency loss.
 
@@ -330,10 +330,10 @@ class ShortCutFieldMatrixGroup(nn.Module):
             # Self-Consistency
             R_t_SG, t_SG, Δt_SG = R_t[:N_SG], t[:N_SG], Δt[:N_SG]
             b_t = self(R_t_SG, t_SG, Δt_SG)
-            B_t = b_t[..., None] * basis
+            B_t = (b_t[..., None, None] * basis).sum(-1)
             R_t_Δt = self.G.L(R_t_SG, self.G.exp(Δt_SG * B_t))
             b_t_Δt = self(R_t_Δt, t_SG + Δt_SG, Δt_SG)
-            B_t_Δt = b_t_Δt[..., None] * basis
+            B_t_Δt = (b_t_Δt[..., None, None] * basis).sum(-1)
             with torch.no_grad():
                 A_t[:N_SG] = (B_t + B_t_Δt) / 2
                 
