@@ -13,9 +13,10 @@
       inverse, and exponential make use of corresponding PyTorch methods. Since
       PyTorch does not implement a matrix logarithm, this must be provided.
     Also provides three example implementations of 
-      1. `Rn(n) <: Group`: n-dimensional translation group R^n.
-      2. `SE2() <: Group`: special Euclidean group of roto-translations on R^2.
-      3. `SO3() <: MatrixGroup`: special orthogonal group of rotations on R^3.
+      1. `Rn(n)` <: `Group`: n-dimensional translation group R^n.
+      2. `SE2()` <: `Group`: special Euclidean group of roto-translations on
+      R^2.
+      3. `SO3()` <: `MatrixGroup`: special orthogonal group of rotations on R^3.
 """
 
 from abc import ABC

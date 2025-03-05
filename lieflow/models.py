@@ -2,7 +2,21 @@
     models
     ======
 
-    skdbfkjsbd
+    Implementations of flow matching[1] and shortcut modeling[2] on Lie groups
+    over exponential curves.[3]
+    The implementation is slightly different for groups of type `Group` than
+    for those of type `MatrixGroup`; the methods `get_model_FM` and
+    `get_model_SCFM` will return an instance of a flow matching and shortcut
+    model, respectively, corresponding to the type of the group.
+
+    References:
+      [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
+      "Flow Matching for Generative Modeling." arXiv preprint (2022).
+      DOI:10.48550/arXiv.2210.02747.
+      [2]: K. Frans, D. Hafner, S. Levine, and P. Abbeel.
+      "One Step Diffusion via Shortcut Models." arXiv preprint (2024).
+      DOI:10.48550/arXiv.2410.12557
+      [3]:
 """
 
 import torch
@@ -13,6 +27,16 @@ from lieflow.groups import Group, MatrixGroup
 
 
 def get_model_FM(G: Group | MatrixGroup, H=64, L=2):
+    """
+    Return an instance of a flow matching model corresponding to the type of
+    `G`.
+
+    Args:
+        G: group of type `Group` or `MatrixGroup`.
+      Optional:
+        H: width of the network: number of channels. Defaults to 64.
+        L: depth of the network: number of layers - 2. Defaults to 2.
+    """
     if isinstance(G, Group):
         return FlowFieldGroup(G, H=H, L=L)
     elif isinstance(G, MatrixGroup):
@@ -21,6 +45,15 @@ def get_model_FM(G: Group | MatrixGroup, H=64, L=2):
         raise ValueError(f"{G} is neither a `Group` nor a `Matrix Group`!")
     
 def get_model_SCFM(G: Group | MatrixGroup, H=64, L=2):
+    """
+    Return an instance of a shortcut model corresponding to the type of `G`.
+    
+    Args:
+        G: group of type `Group` or `MatrixGroup`.
+      Optional:
+        H: width of the network: number of channels. Defaults to 64.
+        L: depth of the network: number of layers - 2. Defaults to 2.
+    """
     if isinstance(G, Group):
         return ShortCutFieldGroup(G, H=H, L=L)
     elif isinstance(G, MatrixGroup):
@@ -30,6 +63,23 @@ def get_model_SCFM(G: Group | MatrixGroup, H=64, L=2):
     
 
 class FlowFieldGroup(nn.Module):
+    """
+    Model for flow matching[1] on Lie groups of type `Group` over exponential
+    curves.[2]
+    
+    Args:
+        G: group of type `Group` or `MatrixGroup`.
+      Optional:
+        H: width of the network: number of channels. Defaults to 64.
+        L: depth of the network: number of layers - 2. Defaults to 2.
+
+    References:
+        [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
+          "Flow Matching for Generative Modeling." arXiv preprint (2022).
+          DOI:10.48550/arXiv.2210.02747.
+        [2]:
+    """
+    
     def __init__(self, G: Group, H=64, L=2):
         super().__init__()
         self.G = G
@@ -69,6 +119,23 @@ class FlowFieldGroup(nn.Module):
         return losses.mean()
     
 class ShortCutFieldGroup(nn.Module):
+    """
+    Model for shortcut modeling[1] on Lie groups of type `Group` over
+    exponential curves.[2]
+    
+    Args:
+        G: group of type `Group` or `MatrixGroup`.
+      Optional:
+        H: width of the network: number of channels. Defaults to 64.
+        L: depth of the network: number of layers - 2. Defaults to 2.
+    
+    References:
+        [1]: K. Frans, D. Hafner, S. Levine, and P. Abbeel.
+          "One Step Diffusion via Shortcut Models." arXiv preprint (2024).
+          DOI:10.48550/arXiv.2410.12557
+        [2]:
+    """
+
     def __init__(self, G: Group, H=64, L=2):
         super().__init__()
         self.G = G
@@ -128,6 +195,26 @@ class ShortCutFieldGroup(nn.Module):
     
 
 class FlowFieldMatrixGroup(nn.Module):
+    """
+    Model for flow matching[1] on Lie groups of type `MatrixGroup` over
+    exponential curves.[2]
+    
+    Args:
+        G: group of type `Group` or `MatrixGroup`.
+      Optional:
+        H: width of the network: number of channels. Defaults to 64.
+        L: depth of the network: number of layers - 2. Defaults to 2.
+    
+    References:
+        [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
+          "Flow Matching for Generative Modeling." arXiv preprint (2022).
+          DOI:10.48550/arXiv.2210.02747.
+        [2]: K. Frans, D. Hafner, S. Levine, and P. Abbeel.
+          "One Step Diffusion via Shortcut Models." arXiv preprint (2024).
+          DOI:10.48550/arXiv.2410.12557
+        [3]:
+    """
+    
     def __init__(self, G: MatrixGroup, H=64, L=2):
         super().__init__()
         self.G = G
@@ -173,6 +260,26 @@ class FlowFieldMatrixGroup(nn.Module):
         return losses.mean()
     
 class ShortCutFieldMatrixGroup(nn.Module):
+    """
+    Model for shortcut modeling[1] on Lie groups of type `MatrixGroup` over
+    exponential curves.[2]
+    
+    Args:
+        G: group of type `Group` or `MatrixGroup`.
+      Optional:
+        H: width of the network: number of channels. Defaults to 64.
+        L: depth of the network: number of layers - 2. Defaults to 2.
+    
+    References:
+        [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
+          "Flow Matching for Generative Modeling." arXiv preprint (2022).
+          DOI:10.48550/arXiv.2210.02747.
+        [2]: K. Frans, D. Hafner, S. Levine, and P. Abbeel.
+          "One Step Diffusion via Shortcut Models." arXiv preprint (2024).
+          DOI:10.48550/arXiv.2410.12557
+        [3]:
+    """
+
     def __init__(self, G: MatrixGroup, H=64, L=2):
         super().__init__()
         self.G = G
