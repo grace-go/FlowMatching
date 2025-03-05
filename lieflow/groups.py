@@ -70,7 +70,7 @@ class Rn(Group):
     def __repr__(self):
         return f"R^{self.dim}"
     
-class SE2(ABC):
+class SE2(Group):
     """"""
     def __init__(self):
         super().__init__()
