@@ -12,11 +12,12 @@
       represented with matrices. Group multiplication, multiplication by
       inverse, and exponential make use of corresponding PyTorch methods. Since
       PyTorch does not implement a matrix logarithm, this must be provided.
-    Also provides three example implementations of 
+    Also provides four example implementations of 
       1. `Rn(n)` <: `Group`: n-dimensional translation group R^n.
       2. `SE2()` <: `Group`: special Euclidean group of roto-translations on
       R^2.
-      3. `SO3()` <: `MatrixGroup`: special orthogonal group of rotations on R^3.
+      3. `SE2byRn` <: `Group`: direct product of SE(2) and R^n.
+      4. `SO3()` <: `MatrixGroup`: special orthogonal group of rotations on R^3.
 """
 
 from abc import ABC
@@ -202,6 +203,64 @@ class SE2(Group):
     
     def __repr__(self):
         return "SE(2)"
+
+class SE2byRn(Group):
+    """
+    Direct product of special Euclidean group of roto-translations on R^2 and
+    n-dimensional translation group.
+
+    Args:
+        `se2`: instance of the special Euclidean group.
+        `rn`: instance of the n-dimensional translation group. 
+    """
+    def __init__(self, se2: SE2, rn: Rn):
+        super().__init__()
+        self.dim = se2.dim + rn.dim
+        self.se2 = se2
+        self.rn = rn
+    
+    def L(self, g_1, g_2):
+        """
+        Left multiplication of `g_2 = (x_2, p_2)` by `g_1 = (x_1, p_1)`, i.e.
+        `(x_1 + x_2, p_1 p_2)`.
+        """
+        g = torch.zeros_like(g_2)
+        g[..., :3] = self.se2.L(g_1[..., :3], g_2[..., :3])
+        g[..., 3:] = self.rn.L(g_1[..., 3:], g_2[..., 3:])
+        return g_1 + g_2
+    
+    def L_inv(self, g_1, g_2):
+        """
+        Left multiplication of `g_2 = (x_2, p_2)` by `g_1^-1 = (-x_1, p_1^-1)`,
+        i.e. `(x_2 - x_1, p_1^-1 p_2)`.
+        """
+        g = torch.zeros_like(g_2)
+        g[..., :3] = self.se2.L_inv(g_1[..., :3], g_2[..., :3])
+        g[..., 3:] = self.rn.L_inv(g_1[..., 3:], g_2[..., 3:])
+        return g_2 - g_1
+    
+    def log(self, g):
+        """
+        Lie group logarithm of `g = (x, p)`, i.e. `(x, P)` with `P` in Lie
+        algebra such that `exp(P) = p`.
+        """
+        A = torch.zeros_like(g)
+        A[..., :3] = self.se2.log(g[..., :3])
+        A[..., 3:] = self.rn.log(g[..., 3:])
+        return A
+    
+    def exp(self, A):
+        """
+        Lie group exponential of `A = (x, P)`, i.e. `(x, p)` with `p` in Lie
+        group such that `exp(P) = p`.
+        """
+        g = torch.zeros_like(A)
+        g[..., :3] = self.se2.exp(A[..., :3])
+        g[..., 3:] = self.rn.exp(A[..., 3:])
+        return g
+    
+    def __repr__(self):
+        return f"SE(2) x R^{self.rn.dim}"
 
 
 class MatrixGroup(ABC):
