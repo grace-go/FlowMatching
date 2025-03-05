@@ -16,7 +16,7 @@ class SO3():
         """
         Left multiplication of `R_2` by `R_1`.
         """
-        return torch.matmul(R_1, R_2)
+        return R_1 @ R_2
     
     def L_inv(self, R_1, R_2):
         """
