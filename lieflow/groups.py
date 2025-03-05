@@ -2,13 +2,35 @@
     groups
     ======
 
-    sakfbkhasdbf
+    Classes that encapsulate basic Lie group and Lie algebra properties. 
+    There are two abstract parent classes:
+      1. `Group`: Use this class when the group and algebra can be efficiently
+      parametrised with the same number of parameters. Requires implementing
+      hand crafted group multiplication, multiplication by inverse, exponential,
+      and logarithm.
+      2. `MatrixGroup`: Use this class when the group can be efficiently
+      represented with matrices. Group multiplication, multiplication by
+      inverse, and exponential make use of corresponding PyTorch methods. Since
+      PyTorch does not implement a matrix logarithm, this must be provided.
+    Also provides three example implementations of 
+      1. `Rn(n) <: Group`: n-dimensional translation group R^n.
+      2. `SE2() <: Group`: special Euclidean group of roto-translations on R^2.
+      3. `SO3() <: MatrixGroup`: special orthogonal group of rotations on R^3.
 """
 
 from abc import ABC
 import torch
 
+
 class Group(ABC):
+    """
+    Class encapsulating basic Lie group and Lie algebra properties for groups
+    that can be efficiently parametrised with as many parameters as the group
+    dimension.
+
+    Requires implementing hand crafted group multiplication, multiplication by
+    inverse, exponential, and logarithm.
+    """
     def __init__(self):
         super().__init__()
         self.dim = None
@@ -38,7 +60,12 @@ class Group(ABC):
         raise NotImplementedError
 
 class Rn(Group):
-    """"""
+    """
+    Translation group.
+
+    Args:
+        `n`: dimension of the translation group.
+    """
     def __init__(self, n):
         super().__init__()
         self.dim = n
@@ -71,7 +98,9 @@ class Rn(Group):
         return f"R^{self.dim}"
     
 class SE2(Group):
-    """"""
+    """
+    Special Euclidean group of roto-translations on R^2.
+    """
     def __init__(self):
         super().__init__()
         self.dim = 3
@@ -175,10 +204,20 @@ class SE2(Group):
 
 
 class MatrixGroup(ABC):
+    """
+    Class encapsulating basic Lie group and Lie algebra properties for groups
+    that can be efficiently represented with matrices.
+
+    Group multiplication, multiplication by inverse, and exponential make use of
+    corresponding PyTorch methods. Since PyTorch does not implement a matrix
+    logarithm, this must be provided.
+    """
+
     def __init__(self):
         super().__init__()
         self.dim = None
         self.mat_dim = None
+        self.lie_algebra_basis = None
     
     def L(self, R_1, R_2):
         """
@@ -197,8 +236,8 @@ class MatrixGroup(ABC):
         Lie group logarithm of `R`, i.e. `A` in Lie algebra such that
         `exp(A) = R`.
 
-        Pytorch does not actually have a matrix log built in, but for SO(3) it
-        is not too complicated.
+        Pytorch does not actually have a matrix log built-in, so this must be
+        provided.
         """
         raise NotImplementedError
 
@@ -209,35 +248,22 @@ class MatrixGroup(ABC):
         """
         return torch.matrix_exp(A)
     
-    def lie_algebra_basis(self):
+    def lie_algebra_components(self, A):
         """
-        Basis for the Lie algebra.
+        Compute the components of Lie algebra basis `A` with respect to the
+        basis given by `self.lie_algebra_basis`.
         """
         raise NotImplementedError
 
 class SO3(MatrixGroup):
-    """"""
+    """
+    Special orthogonal group of rotations on R^3.
+    """
     def __init__(self):
         super().__init__()
         self.dim = 3
         self.mat_dim = 3 * 3
-
-    def log(self, R):
-        """
-        Lie group logarithm of `R`, i.e. `A` in Lie algebra such that
-        `exp(A) = R`.
-
-        Pytorch does not actually have a matrix log built in, but for SO(3) it
-        is not too complicated.
-        """
-        q = torch.arccos((R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) - 1) / 2)
-        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(q[..., None, None] / torch.pi))
-    
-    def lie_algebra_basis(self):
-        """
-        Basis for the Lie algebra.
-        """
-        return torch.Tensor([
+        self.lie_algebra_basis = torch.Tensor([
             [
                 [0., 0., 0.],
                 [0., 0., -1.],
@@ -254,8 +280,23 @@ class SO3(MatrixGroup):
                 [0., 0., 0.],
             ],
         ])
+
+    def log(self, R):
+        """
+        Lie group logarithm of `R`, i.e. `A` in Lie algebra such that
+        `exp(A) = R`.
+
+        Pytorch does not actually have a matrix log built in, but for SO(3) it
+        is not too complicated.
+        """
+        q = torch.arccos((R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) - 1) / 2)
+        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(q[..., None, None] / torch.pi))
     
     def lie_algebra_components(self, A):
+        """
+        Compute the components of Lie algebra basis `A` with respect to the
+        basis given by `self.lie_algebra_basis`.
+        """
         return torch.cat((A[..., 2, 1], A[..., 0, 2], A[..., 1, 0]), dim=-1)
     
     def __repr__(self):
