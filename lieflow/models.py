@@ -32,10 +32,10 @@ def get_model_FM(G: Group | MatrixGroup, H=64, L=2):
     `G`.
 
     Args:
-        G: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        H: width of the network: number of channels. Defaults to 64.
-        L: depth of the network: number of layers - 2. Defaults to 2.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
     """
     if isinstance(G, Group):
         return FlowFieldGroup(G, H=H, L=L)
@@ -49,10 +49,10 @@ def get_model_SCFM(G: Group | MatrixGroup, H=64, L=2):
     Return an instance of a shortcut model corresponding to the type of `G`.
     
     Args:
-        G: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        H: width of the network: number of channels. Defaults to 64.
-        L: depth of the network: number of layers - 2. Defaults to 2.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
     """
     if isinstance(G, Group):
         return ShortCutFieldGroup(G, H=H, L=L)
@@ -68,10 +68,10 @@ class FlowFieldGroup(nn.Module):
     curves.[2]
     
     Args:
-        G: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        H: width of the network: number of channels. Defaults to 64.
-        L: depth of the network: number of layers - 2. Defaults to 2.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
 
     References:
         [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
@@ -124,10 +124,10 @@ class ShortCutFieldGroup(nn.Module):
     exponential curves.[2]
     
     Args:
-        G: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        H: width of the network: number of channels. Defaults to 64.
-        L: depth of the network: number of layers - 2. Defaults to 2.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
     
     References:
         [1]: K. Frans, D. Hafner, S. Levine, and P. Abbeel.
@@ -200,10 +200,10 @@ class FlowFieldMatrixGroup(nn.Module):
     exponential curves.[2]
     
     Args:
-        G: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        H: width of the network: number of channels. Defaults to 64.
-        L: depth of the network: number of layers - 2. Defaults to 2.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
     
     References:
         [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
@@ -265,10 +265,10 @@ class ShortCutFieldMatrixGroup(nn.Module):
     exponential curves.[2]
     
     Args:
-        G: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        H: width of the network: number of channels. Defaults to 64.
-        L: depth of the network: number of layers - 2. Defaults to 2.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
     
     References:
         [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
