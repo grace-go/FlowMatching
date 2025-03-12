@@ -341,7 +341,7 @@ class SO3(MatrixGroup):
             ],
         ])
 
-    def log(self, R):
+    def log(self, R, clip_min=-0.99, clip_max=0.99):
         """
         Lie group logarithm of `R`, i.e. `A` in Lie algebra such that
         `exp(A) = R`.
@@ -350,7 +350,10 @@ class SO3(MatrixGroup):
         is not too complicated.
         """
         q = torch.arccos((R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) - 1) / 2)
-        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(q[..., None, None] / torch.pi))
+        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(torch.clip(
+            q[..., None, None] / torch.pi,
+            min=clip_min, max=clip_max
+        )))
     
     def lie_algebra_components(self, A):
         """
