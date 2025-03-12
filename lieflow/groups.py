@@ -341,7 +341,7 @@ class SO3(MatrixGroup):
             ],
         ])
 
-    def log(self, R, clip_min=-0.99, clip_max=0.99):
+    def log(self, R, ε_stab=0.001):
         """
         Lie group logarithm of `R`, i.e. `A` in Lie algebra such that
         `exp(A) = R`.
@@ -349,11 +349,10 @@ class SO3(MatrixGroup):
         Pytorch does not actually have a matrix log built in, but for SO(3) it
         is not too complicated.
         """
-        q = torch.arccos((R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) - 1) / 2)
-        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(torch.clip(
-            q[..., None, None] / torch.pi,
-            min=clip_min, max=clip_max
-        )))
+        q = torch.arccos((_trace(R) - 1) / 2)
+        return (R - R.transpose(-2, -1)) / (2 * torch.sinc(
+                q[..., None, None] / ((1 + ε_stab) * torch.pi)
+        ))
     
     def lie_algebra_components(self, A):
         """
@@ -371,6 +370,9 @@ class SO3(MatrixGroup):
 def _mod_offset(x, period, offset):
     """Compute `x` modulo `period` with offset `offset`."""
     return x - (x - offset)//period * period
+
+def _trace(R):
+    return R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) 
 
 def _tanc(x):
     """Compute `tan(x)/x`."""
