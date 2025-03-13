@@ -111,7 +111,7 @@ class SE2(Group):
         """
         Left multiplication of `g_2` by `g_1`.
         """
-        g = torch.zeros_like(g_2)
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
         x_1 = g_1[..., 0]
         y_1 = g_1[..., 1]
         θ_1 = g_1[..., 2]
@@ -132,7 +132,7 @@ class SE2(Group):
         """
         Left multiplication of `g_2` by `g_1^-1`.
         """
-        g = torch.zeros_like(g_2)
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
         x_1 = g_1[..., 0]
         y_1 = g_1[..., 1]
         θ_1 = g_1[..., 2]
@@ -225,7 +225,7 @@ class SE2byRn(Group):
         Left multiplication of `g_2 = (x_2, p_2)` by `g_1 = (x_1, p_1)`, i.e.
         `(x_1 + x_2, p_1 p_2)`.
         """
-        g = torch.zeros_like(g_2)
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
         g[..., :3] = self.se2.L(g_1[..., :3], g_2[..., :3])
         g[..., 3:] = self.rn.L(g_1[..., 3:], g_2[..., 3:])
         return g_1 + g_2
@@ -235,7 +235,7 @@ class SE2byRn(Group):
         Left multiplication of `g_2 = (x_2, p_2)` by `g_1^-1 = (-x_1, p_1^-1)`,
         i.e. `(x_2 - x_1, p_1^-1 p_2)`.
         """
-        g = torch.zeros_like(g_2)
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
         g[..., :3] = self.se2.L_inv(g_1[..., :3], g_2[..., :3])
         g[..., 3:] = self.rn.L_inv(g_1[..., 3:], g_2[..., 3:])
         return g_2 - g_1
