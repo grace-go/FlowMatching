@@ -159,11 +159,12 @@ class SE2(Group):
         y = g[..., 1]
         θ = _mod_offset(g[..., 2], 2 * torch.pi, -torch.pi)
 
-        tan = torch.tan(θ/2.)
-        tanc = _tanc(θ/2.)
+        cos = torch.cos(θ/2.)
+        sin = torch.sin(θ/2.)
+        sinc = torch.sinc(θ/(2. * torch.pi)) # torch.sinc(x) = sin(pi x) / (pi x)
 
-        A[..., 0] = (y * tan + x) / tanc
-        A[..., 1] = (-x * tan + y) / tanc
+        A[..., 0] = (x * cos + y * sin) / sinc
+        A[..., 1] = (-x * sin + y * cos) / sinc
         A[..., 2] = θ
         return A
 
