@@ -298,7 +298,7 @@ class ShortCutFieldMatrixGroup(nn.Module):
         # Components w.r.t. Lie algebra basis.
         a_t = self(R_t, t, Δt)
         basis = self.G.lie_algebra_basis
-        A_t = a_t[..., None] * basis
+        A_t = (a_t[..., None, None] * basis).sum(-3)
         return self.G.L(R_t, self.G.exp(Δt * A_t))
     
     def train_network(self, device, train_loader, optimizer, loss, k=1/4):
@@ -314,7 +314,7 @@ class ShortCutFieldMatrixGroup(nn.Module):
             unit="batch"
         ):
             N_total = len(R_1) # Total number of samples in batch.
-            t = torch.rand(len(R_1), 1).to(device)
+            t = torch.rand(len(R_1), 1, 1).to(device)
             R_0, R_1 = R_0.to(device), R_1.to(device)
             R_t = self.G.L(R_0, self.G.exp(t * self.G.log(self.G.L_inv(R_0, R_1))))
             
