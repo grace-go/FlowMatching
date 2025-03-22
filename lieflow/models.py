@@ -62,6 +62,64 @@ def get_model_SCFM(G: Group | MatrixGroup, H=64, L=2):
         raise ValueError(f"{G} is neither a `Group` nor a `Matrix Group`!")
     
 
+# class FlowFieldGroup(nn.Module):
+#     """
+#     Model for flow matching[1] on Lie groups of type `Group` over exponential
+#     curves.[2]
+    
+#     Args:
+#         `G`: group of type `Group` or `MatrixGroup`.
+#       Optional:
+#         `H`: width of the network: number of channels. Defaults to 64.
+#         `L`: depth of the network: number of layers - 2. Defaults to 2.
+
+#     References:
+#         [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
+#           "Flow Matching for Generative Modeling." arXiv preprint (2022).
+#           DOI:10.48550/arXiv.2210.02747.
+#         [2]:
+#     """
+    
+#     def __init__(self, G: Group, H=64, L=2):
+#         super().__init__()
+#         self.G = G
+#         self.network = nn.Sequential(
+#             nn.Linear(G.dim+1, H), nn.ReLU(),
+#             *(L*(nn.Linear(H, H), nn.ReLU(),)),
+#             nn.Linear(H, G.dim)
+#         )
+
+#     def forward(self, g_t, t):
+#         return self.network(torch.cat((g_t, t), dim=-1))
+    
+#     def step(self, g_t, t, Δt):
+#         t = t.view(1, 1).expand(g_t.shape[0], 1)
+#         return self.G.exp(self.G.log(g_t) + Δt * self(g_t, t))
+    
+#     def train_network(self, device, train_loader, optimizer, loss):
+#         self.train()
+#         N_batches = len(train_loader)
+#         losses = np.zeros(N_batches)
+#         for i, (g_0, g_1) in tqdm(
+#             enumerate(train_loader),
+#             total=N_batches,
+#             desc="Training",
+#             dynamic_ncols=True,
+#             unit="batch"
+#         ):
+#             t = torch.rand(len(g_1), 1).to(device)
+#             g_0, g_1 = g_0.to(device), g_1.to(device)
+#             A_0 = self.G.log(g_0)
+#             A_1 = self.G.log(g_1)
+#             A_t = A_1 - A_0
+#             g_t = self.G.L(self.G.exp((1 - t) * A_0), self.G.exp(t * A_1))
+#             optimizer.zero_grad()
+#             batch_loss = loss(self(g_t, t), A_t)
+#             losses[i] = float(batch_loss.cpu().item())
+#             batch_loss.backward()
+#             optimizer.step()
+#         return losses.mean()
+
 class FlowFieldGroup(nn.Module):
     """
     Model for flow matching[1] on Lie groups of type `Group` over exponential

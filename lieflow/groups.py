@@ -263,6 +263,72 @@ class SE2byRn(Group):
     def __repr__(self):
         return f"SE(2) x R^{self.rn.dim}"
 
+class TSn(Group):
+    """
+    Translation-Scaling group.
+
+    Args:
+        `n`: dimension of the translational part of the group.
+    """
+    def __init__(self, n):
+        super().__init__()
+        self.dim = n + 1
+    
+    def L(self, g_1, g_2):
+        """
+        Left multiplication of `g_2` by `g_1`.
+        """
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        x_1 = g_1[..., :-1]
+        s_1 = g_1[..., -1]
+        x_2 = g_2[..., :-1]
+        s_2 = g_2[..., -1]
+
+        g[..., :-1] = x_1 + s_1[..., None] * x_2
+        g[..., -1] = s_1 * s_2
+        return g
+    
+    def L_inv(self, g_1, g_2):
+        """
+        Left multiplication of `g_2` by `g_1^-1`.
+        """
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        x_1 = g_1[..., :-1]
+        s_1 = g_1[..., -1]
+        x_2 = g_2[..., :-1]
+        s_2 = g_2[..., -1]
+        
+        g[..., :-1] = (x_2 - x_1) / s_1[..., None]
+        g[..., -1] = s_2 / s_1
+        return g
+    
+    def log(self, g):
+        """
+        Lie group logarithm of `g`.
+        """
+        A = torch.zeros_like(g)
+        x = g[..., :-1]
+        s = g[..., -1]
+
+        A[..., :-1] =  _logc(s)[..., None] * x
+        A[..., 2] = torch.log(s)
+        return A
+    
+    def exp(self, A):
+        """
+        Lie group exponential of `A`.
+        """
+        g = torch.zeros_like(A)
+        cx = A[..., :-1]
+        cs = A[..., -1]
+
+        g[..., :-1] = cx * _expc(cs)[..., None]
+        g[..., -1] = torch.exp(cs)
+        return g
+    
+    def __repr__(self):
+        return f"TS({self.dim})"
+
 
 class MatrixGroup(ABC):
     """
@@ -375,6 +441,10 @@ def _mod_offset(x, period, offset):
 def _trace(R):
     return R.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1) 
 
-def _tanc(x):
-    """Compute `tan(x)/x`."""
-    return torch.where(x == 0, 1, torch.tan(x) / x)
+def _logc(x):
+    """Compute `log(x)/(x - 1)`."""
+    return torch.where(x == 1., 1., torch.log(x) / (x - 1.))
+
+def _expc(x):
+    """Compute `(exp(x) - 1)/x`."""
+    return torch.where(x == 0, 1., (torch.exp(x) - 1.)/ x)
