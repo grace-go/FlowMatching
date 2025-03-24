@@ -406,6 +406,80 @@ class ShortCutFieldMatrixGroup(nn.Module):
         return losses.mean()
 
 
+class FlowFieldProductGroup(nn.Module):
+    """
+    Model for flow matching[1] on Lie groups of type `Group` over exponential
+    curves.[2]
+    
+    Args:
+        `G`: group of type `Group` or `MatrixGroup`.
+      Optional:
+        `H`: width of the network: number of channels. Defaults to 64.
+        `L`: depth of the network: number of layers - 2. Defaults to 2.
+
+    References:
+        [1]: Y. Lipman, R.T.Q. Chen, H. Ben-Hami, M. Nickel, and M. Le.
+          "Flow Matching for Generative Modeling." arXiv preprint (2022).
+          DOI:10.48550/arXiv.2210.02747.
+        [2]:
+    """
+    
+    def __init__(self, G: Group, embed_dim=256, num_heads=8, expansion=4, L=2):
+        super().__init__()
+        self.G = G
+        
+        self.network = nn.Sequential(
+            nn.Linear(G.dim+1, embed_dim),
+            *(L*(EncoderBlock(embed_dim, num_heads, expansion),)),
+            nn.Linear(embed_dim, G.dim)
+        )
+
+    def forward(self, g_t, t):
+        return self.network(torch.cat((g_t, t), dim=-1))
+    
+    def step(self, g_t, t, Δt):
+        t = t.view(1, 1, 1).expand(*g_t.shape[:-1], 1)
+        return self.G.L(g_t, self.G.exp(Δt * self(g_t, t)))
+    
+    def train_network(self, device, train_loader, optimizer, loss):
+        self.train()
+        N_batches = len(train_loader)
+        losses = np.zeros(N_batches)
+        for i, (g_0, g_1) in tqdm(
+            enumerate(train_loader),
+            total=N_batches,
+            desc="Training",
+            dynamic_ncols=True,
+            unit="batch"
+        ):
+            t = torch.rand(len(g_1), 1, 1).expand(*g_1.shape[:-1], 1).to(device)
+            g_0, g_1 = g_0.to(device), g_1.to(device)
+            A_t = self.G.log(self.G.L_inv(g_0, g_1))
+            g_t = self.G.L(g_0, self.G.exp(t * A_t))
+            optimizer.zero_grad()
+            batch_loss = loss(self(g_t, t), A_t)
+            losses[i] = float(batch_loss.cpu().item())
+            batch_loss.backward()
+            optimizer.step()
+        return losses.mean()
+
+class EncoderBlock(nn.Module):
+    def __init__(self, embed_dim, num_heads, expansion):
+        super().__init__()
+        self.attn = nn.MultiheadAttention(embed_dim, num_heads, batch_first=True)
+        self.ln1 = nn.LayerNorm(embed_dim)
+        self.ln2 = nn.LayerNorm(embed_dim)
+        self.ff = nn.Sequential(
+            nn.Linear(embed_dim, expansion * embed_dim),
+            nn.ReLU(),
+            nn.Linear(expansion * embed_dim, embed_dim)
+        )
+
+    def forward(self, x):
+        A, _ = self.attn(x, x, x, need_weights=False)
+        x = self.ln1(A + x)
+        return self.ln2(x + self.ff(x))
+
 class LogarithmicDistance(nn.Module):
     def __init__(self, w):
         super().__init__()
@@ -413,10 +487,10 @@ class LogarithmicDistance(nn.Module):
         self.ρ = lambda A_1, A_2: self.ρ_c_normalised(A_1, A_2, w)
     
     def ρ_c_normalised(self, A_1, A_2, w):
-        return (w**2 * (A_2 - A_1)**2).mean(-1)
+        return (w**2 * (A_2 - A_1)**2).mean()
     
     def forward(self, input, target):
-        return self.ρ(input, target).mean(-1)
+        return self.ρ(input, target)
 
     def __repr__(self):
         return f"LogarithmicDistance{tuple(self.w.numpy())}"
