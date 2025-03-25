@@ -26,7 +26,7 @@ from tqdm import tqdm
 from lieflow.groups import Group, MatrixGroup
 
 
-def get_model_FM(G: Group | MatrixGroup, H=64, L=2):
+def get_model_FM(G: Group | MatrixGroup, L=2, power_group=False, H=64, embed_dim=256, num_heads=8, expansion=4):
     """
     Return an instance of a flow matching model corresponding to the type of
     `G`.
@@ -34,11 +34,22 @@ def get_model_FM(G: Group | MatrixGroup, H=64, L=2):
     Args:
         `G`: group of type `Group` or `MatrixGroup`.
       Optional:
-        `H`: width of the network: number of channels. Defaults to 64.
         `L`: depth of the network: number of layers - 2. Defaults to 2.
+        `power_group`: boolean describing whether data live in the group `G`
+        (False) or in a simple power thereof (True). If `power_group == False`,
+        we use an MLP, with optional arguments `H`. If `power_group == True`, we
+        use a transformer, with optional arguments `embed_dim`, `num_heads`, and
+        `expansion`. Defaults to False.
+        `H`: width of the network: number of channels. Defaults to 64.
+        `embed_dim`: dimension of the linear embedding of the tokens.
+        `num_heads`: number of heads in the multihead attention.
+        `expansion`: expansion factor in the pointwise feedforward network.
     """
     if isinstance(G, Group):
-        return FlowFieldGroup(G, H=H, L=L)
+        if power_group:
+            return FlowFieldPowerGroup(G, embed_dim=embed_dim, num_heads=num_heads, expansion=expansion, L=L)
+        else:
+            return FlowFieldGroup(G, H=H, L=L)
     elif isinstance(G, MatrixGroup):
         return FlowFieldMatrixGroup(G, H=H, L=L)
     else:
@@ -126,7 +137,7 @@ class FlowFieldGroup(nn.Module):
     curves.[2]
     
     Args:
-        `G`: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group`.
       Optional:
         `H`: width of the network: number of channels. Defaults to 64.
         `L`: depth of the network: number of layers - 2. Defaults to 2.
@@ -182,7 +193,7 @@ class ShortCutFieldGroup(nn.Module):
     exponential curves.[2]
     
     Args:
-        `G`: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group`.
       Optional:
         `H`: width of the network: number of channels. Defaults to 64.
         `L`: depth of the network: number of layers - 2. Defaults to 2.
@@ -258,7 +269,7 @@ class FlowFieldMatrixGroup(nn.Module):
     exponential curves.[2]
     
     Args:
-        `G`: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `MatrixGroup`.
       Optional:
         `H`: width of the network: number of channels. Defaults to 64.
         `L`: depth of the network: number of layers - 2. Defaults to 2.
@@ -323,7 +334,7 @@ class ShortCutFieldMatrixGroup(nn.Module):
     exponential curves.[2]
     
     Args:
-        `G`: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `MatrixGroup`.
       Optional:
         `H`: width of the network: number of channels. Defaults to 64.
         `L`: depth of the network: number of layers - 2. Defaults to 2.
@@ -406,15 +417,17 @@ class ShortCutFieldMatrixGroup(nn.Module):
         return losses.mean()
 
 
-class FlowFieldProductGroup(nn.Module):
+class FlowFieldPowerGroup(nn.Module):
     """
-    Model for flow matching[1] on Lie groups of type `Group` over exponential
-    curves.[2]
+    Model for flow matching[1] on powers of Lie groups of type `Group` over
+    exponential curves.[2]
     
     Args:
-        `G`: group of type `Group` or `MatrixGroup`.
+        `G`: group of type `Group`.
       Optional:
-        `H`: width of the network: number of channels. Defaults to 64.
+        `embed_dim`: dimension of the linear embedding of the tokens.
+        `num_heads`: number of heads in the multihead attention.
+        `expansion`: expansion factor in the pointwise feedforward network.
         `L`: depth of the network: number of layers - 2. Defaults to 2.
 
     References:
@@ -464,6 +477,14 @@ class FlowFieldProductGroup(nn.Module):
         return losses.mean()
 
 class EncoderBlock(nn.Module):
+    """
+    Simple transformer encoder block.
+
+    Args:
+        `embed_dim`: dimension of the linear embedding of the tokens.
+        `num_heads`: number of heads in the multihead attention.
+        `expansion`: expansion factor in the pointwise feedforward network.
+    """
     def __init__(self, embed_dim, num_heads, expansion):
         super().__init__()
         self.attn = nn.MultiheadAttention(embed_dim, num_heads, batch_first=True)
