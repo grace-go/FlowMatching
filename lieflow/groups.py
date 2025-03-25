@@ -111,7 +111,7 @@ class SE2(Group):
         """
         Left multiplication of `g_2` by `g_1`.
         """
-        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
         x_1 = g_1[..., 0]
         y_1 = g_1[..., 1]
         θ_1 = g_1[..., 2]
@@ -132,7 +132,7 @@ class SE2(Group):
         """
         Left multiplication of `g_2` by `g_1^-1`.
         """
-        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
         x_1 = g_1[..., 0]
         y_1 = g_1[..., 1]
         θ_1 = g_1[..., 2]
@@ -225,20 +225,20 @@ class SE2byRn(Group):
         Left multiplication of `g_2 = (x_2, p_2)` by `g_1 = (x_1, p_1)`, i.e.
         `(x_1 + x_2, p_1 p_2)`.
         """
-        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
         g[..., :3] = self.se2.L(g_1[..., :3], g_2[..., :3])
         g[..., 3:] = self.rn.L(g_1[..., 3:], g_2[..., 3:])
-        return g_1 + g_2
+        return g
     
     def L_inv(self, g_1, g_2):
         """
         Left multiplication of `g_2 = (x_2, p_2)` by `g_1^-1 = (-x_1, p_1^-1)`,
         i.e. `(x_2 - x_1, p_1^-1 p_2)`.
         """
-        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
         g[..., :3] = self.se2.L_inv(g_1[..., :3], g_2[..., :3])
         g[..., 3:] = self.rn.L_inv(g_1[..., 3:], g_2[..., 3:])
-        return g_2 - g_1
+        return g
     
     def log(self, g):
         """
@@ -263,72 +263,6 @@ class SE2byRn(Group):
     def __repr__(self):
         return f"SE(2) x R^{self.rn.dim}"
 
-# class TSn(Group):
-#     """
-#     Translation-Scaling group.
-
-#     Args:
-#         `n`: dimension of the translational part of the group.
-#     """
-#     def __init__(self, n):
-#         super().__init__()
-#         self.dim = n + 1
-    
-#     def L(self, g_1, g_2):
-#         """
-#         Left multiplication of `g_2` by `g_1`.
-#         """
-#         g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
-#         x_1 = g_1[..., :-1]
-#         s_1 = g_1[..., -1]
-#         x_2 = g_2[..., :-1]
-#         s_2 = g_2[..., -1]
-
-#         g[..., :-1] = x_1 + s_1[..., None] * x_2
-#         g[..., -1] = s_1 * s_2
-#         return g
-    
-#     def L_inv(self, g_1, g_2):
-#         """
-#         Left multiplication of `g_2` by `g_1^-1`.
-#         """
-#         g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
-#         x_1 = g_1[..., :-1]
-#         s_1 = g_1[..., -1]
-#         x_2 = g_2[..., :-1]
-#         s_2 = g_2[..., -1]
-        
-#         g[..., :-1] = (x_2 - x_1) / s_1[..., None]
-#         g[..., -1] = s_2 / s_1
-#         return g
-    
-#     def log(self, g):
-#         """
-#         Lie group logarithm of `g`.
-#         """
-#         A = torch.zeros_like(g)
-#         x = g[..., :-1]
-#         s = g[..., -1]
-
-#         A[..., :-1] =  _logc(s)[..., None] * x
-#         A[..., 2] = torch.log(s)
-#         return A
-    
-#     def exp(self, A):
-#         """
-#         Lie group exponential of `A`.
-#         """
-#         g = torch.zeros_like(A)
-#         cx = A[..., :-1]
-#         cs = A[..., -1]
-
-#         g[..., :-1] = cx * _expc(cs)[..., None]
-#         g[..., -1] = torch.exp(cs)
-#         return g
-    
-#     def __repr__(self):
-#         return f"TS({self.dim})"
-
 class TSn(Group):
     """
     Translation-Scaling group.
@@ -344,7 +278,7 @@ class TSn(Group):
         """
         Left multiplication of `g_2` by `g_1`.
         """
-        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
         x_1 = g_1[..., :-1]
         s_1 = g_1[..., -1]
         x_2 = g_2[..., :-1]
@@ -358,7 +292,7 @@ class TSn(Group):
         """
         Left multiplication of `g_2` by `g_1^-1`.
         """
-        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape))
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
         x_1 = g_1[..., :-1]
         s_1 = g_1[..., -1]
         x_2 = g_2[..., :-1]
@@ -394,6 +328,64 @@ class TSn(Group):
     
     def __repr__(self):
         return f"TS({self.dim})"
+    
+class RmbyTSn(Group):
+    """
+    Direct product of m-dimensional translation group and the translation-
+    scaling group on .
+
+    Args:
+        `se2`: instance of the special Euclidean group.
+        `rn`: instance of the n-dimensional translation group. 
+    """
+    def __init__(self, rm: Rn, tsn: TSn):
+        super().__init__()
+        self.dim = rm.dim + tsn.dim
+        self.rm = rm
+        self.tsn = tsn
+    
+    def L(self, g_1, g_2):
+        """
+        Left multiplication of `g_2 = (x_2, p_2)` by `g_1 = (x_1, p_1)`, i.e.
+        `(x_1 + x_2, p_1 p_2)`.
+        """
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
+        g[..., :self.rm.dim] = self.rm.L(g_1[..., :self.rm.dim], g_2[..., :self.rm.dim])
+        g[..., self.rm.dim:] = self.tsn.L(g_1[..., self.rm.dim:], g_2[..., self.rm.dim:])
+        return g
+    
+    def L_inv(self, g_1, g_2):
+        """
+        Left multiplication of `g_2 = (x_2, p_2)` by `g_1^-1 = (-x_1, p_1^-1)`,
+        i.e. `(x_2 - x_1, p_1^-1 p_2)`.
+        """
+        g = torch.zeros(torch.broadcast_shapes(g_1.shape, g_2.shape)).to(g_2.device)
+        g[..., :self.rm.dim] = self.rm.L_inv(g_1[..., :self.rm.dim], g_2[..., :self.rm.dim])
+        g[..., self.rm.dim:] = self.tsn.L_inv(g_1[..., self.rm.dim:], g_2[..., self.rm.dim:])
+        return g
+    
+    def log(self, g):
+        """
+        Lie group logarithm of `g = (x, p)`, i.e. `(x, P)` with `P` in Lie
+        algebra such that `exp(P) = p`.
+        """
+        A = torch.zeros_like(g)
+        A[..., :self.rm.dim] = self.rm.log(g[..., :self.rm.dim])
+        A[..., self.rm.dim:] = self.tsn.log(g[..., self.rm.dim:])
+        return A
+    
+    def exp(self, A):
+        """
+        Lie group exponential of `A = (x, P)`, i.e. `(x, p)` with `p` in Lie
+        group such that `exp(P) = p`.
+        """
+        g = torch.zeros_like(A)
+        g[..., :self.rm.dim] = self.rm.exp(A[..., :self.rm.dim])
+        g[..., self.rm.dim:] = self.tsn.exp(A[..., self.rm.dim:])
+        return g
+    
+    def __repr__(self):
+        return f"R^{self.rm.dim} x TS({self.tsn.dim})"
     
 
 class MatrixGroup(ABC):
