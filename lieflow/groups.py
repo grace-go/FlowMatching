@@ -284,8 +284,8 @@ class TSn(Group):
         x_2 = g_2[..., :-1]
         s_2 = g_2[..., -1]
 
-        g[..., :-1] = x_1 + torch.exp(s_1)[..., None] * x_2
-        g[..., -1] = s_1 + s_2
+        g[..., :-1] = x_1 + torch.exp(_sigmoid(s_1))[..., None] * x_2
+        g[..., -1] = _sigmoid(s_1 + s_2)
         return g
     
     def L_inv(self, g_1, g_2):
@@ -298,8 +298,8 @@ class TSn(Group):
         x_2 = g_2[..., :-1]
         s_2 = g_2[..., -1]
         
-        g[..., :-1] = (x_2 - x_1) * torch.exp(-s_1)[..., None]
-        g[..., -1] = s_2 - s_1
+        g[..., :-1] = (x_2 - x_1) * torch.exp(_sigmoid(-s_1))[..., None]
+        g[..., -1] = _sigmoid(s_2 - s_1)
         return g
     
     def log(self, g):
@@ -308,7 +308,7 @@ class TSn(Group):
         """
         A = torch.zeros_like(g)
         x = g[..., :-1]
-        s = g[..., -1]
+        s = _sigmoid(g[..., -1])
 
         A[..., :-1] =  _expc(s)[..., None] * x
         A[..., 2] = s.clone()
@@ -320,7 +320,7 @@ class TSn(Group):
         """
         g = torch.zeros_like(A)
         cx = A[..., :-1]
-        cs = A[..., -1]
+        cs = _sigmoid(A[..., -1])
 
         g[..., :-1] = cx / _expc(cs)[..., None]
         g[..., -1] = cs.clone()
@@ -501,4 +501,10 @@ def _trace(R):
 
 def _expc(x):
     """Compute `x / (exp(x) - 1)`."""
-    return torch.where(x == 0, 1., x / (torch.exp(x) - 1.))
+    return torch.where(x.abs() < 1.,
+        1. - x/2. + x**2/12. - x**4/720. + x**6/30240.,
+        x / (torch.exp(x) - 1.)
+    )
+
+def _sigmoid(x, scale=88.):
+    return scale * torch.tanh(x / scale)
