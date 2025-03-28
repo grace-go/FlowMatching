@@ -57,7 +57,7 @@ Since `FlowFieldPowerGroup` uses a transformer architecture, it is possible to a
 ## Cite
 If you use this code in your own work, please cite our paper:
 
-<a id="1">[1]</a> Sherry, F.M., Smets, B. "Flow Matching on Lie Groups." 10th International Conference on Geometric Science of Information (GSI) (2025).
+<a id="1">[1]</a> Sherry, F.M., Smets, B.M.N. "Flow Matching on Lie Groups." 10th International Conference on Geometric Science of Information (GSI) (2025).
 ```
 @inproceedings{Sherry2025LieFlow,
   author =       {Sherry, Finn M. and Smets, Bart M.N.},

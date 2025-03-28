@@ -187,6 +187,10 @@ class FlowFieldGroup(nn.Module):
             optimizer.step()
         return losses.mean()
     
+    @property
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
+    
 class ShortCutFieldGroup(nn.Module):
     """
     Model for shortcut modeling[1] on Lie groups of type `Group` over
@@ -262,6 +266,10 @@ class ShortCutFieldGroup(nn.Module):
             optimizer.step()
         return losses.mean()
     
+    @property
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
+    
 
 class FlowFieldMatrixGroup(nn.Module):
     """
@@ -327,6 +335,10 @@ class FlowFieldMatrixGroup(nn.Module):
             batch_loss.backward()
             optimizer.step()
         return losses.mean()
+    
+    @property
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
     
 class ShortCutFieldMatrixGroup(nn.Module):
     """
@@ -415,6 +427,10 @@ class ShortCutFieldMatrixGroup(nn.Module):
             batch_loss.backward()
             optimizer.step()
         return losses.mean()
+    
+    @property
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
 
 
 class FlowFieldPowerGroup(nn.Module):
@@ -475,6 +491,10 @@ class FlowFieldPowerGroup(nn.Module):
             batch_loss.backward()
             optimizer.step()
         return losses.mean()
+    
+    @property
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
 
 class EncoderBlock(nn.Module):
     """
@@ -500,6 +520,10 @@ class EncoderBlock(nn.Module):
         A, _ = self.attn(x, x, x, need_weights=False)
         x = self.ln1(A + x)
         return self.ln2(x + self.ff(x))
+    
+    @property
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
 
 class LogarithmicDistance(nn.Module):
     def __init__(self, w):
