@@ -534,8 +534,30 @@ class LogarithmicDistance(nn.Module):
     def ρ_c_normalised(self, A_1, A_2, w):
         return (w**2 * (A_2 - A_1)**2).mean()
     
-    def forward(self, input, target):
-        return self.ρ(input, target)
+    def forward(self, pred, target):
+        return self.ρ(pred, target)
+
+    def __repr__(self):
+        return f"LogarithmicDistance{tuple(self.w.numpy())}"
+    
+class PermutationInvariantLogarithmicDistance(nn.Module):
+    def __init__(self, w):
+        super().__init__()
+        self.w = w
+        self.ρ = lambda A_1, A_2: self.ρ_c_normalised(A_1, A_2, w)
+    
+    def ρ_c_normalised(self, A_1, A_2, w):
+        return (w**2 * (A_2 - A_1)**2).mean()
+    
+    def forward(self, pred, target):
+        pred_norms = torch.norm(pred, dim=-1)
+        pred_sorted_indices = torch.argsort(pred_norms, dim=-1)
+        pred_sorted = torch.gather(pred, -2, pred_sorted_indices[..., None].expand_as(pred))
+        target_norms = torch.norm(target, dim=-1)
+        target_sorted_indices = torch.argsort(target_norms, dim=-1)
+        target_sorted = torch.gather(target, -2, target_sorted_indices[..., None].expand_as(target))
+
+        return self.ρ(pred_sorted, target_sorted)
 
     def __repr__(self):
         return f"LogarithmicDistance{tuple(self.w.numpy())}"
