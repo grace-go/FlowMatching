@@ -22,7 +22,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from lieflow.groups import Group, MatrixGroup
 
 
@@ -116,7 +116,8 @@ def get_model_SCFM(G: Group | MatrixGroup, H=64, L=2):
 #             total=N_batches,
 #             desc="Training",
 #             dynamic_ncols=True,
-#             unit="batch"
+#             unit="batch",
+#             leave=False,
 #         ):
 #             t = torch.rand(len(g_1), 1).to(device)
 #             g_0, g_1 = g_0.to(device), g_1.to(device)
@@ -174,7 +175,8 @@ class FlowFieldGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             t = torch.rand(len(g_1), 1).to(device)
             g_0, g_1 = g_0.to(device), g_1.to(device)
@@ -235,7 +237,8 @@ class ShortCutFieldGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             N_total = len(g_1) # Total number of samples in batch.
             t = torch.rand(len(g_1), 1).to(device)
@@ -321,7 +324,8 @@ class FlowFieldMatrixGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             t = torch.rand(len(R_1), 1, 1).to(device)
             R_0, R_1 = R_0.to(device), R_1.to(device)
@@ -392,7 +396,8 @@ class ShortCutFieldMatrixGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             N_total = len(R_1) # Total number of samples in batch.
             t = torch.rand(len(R_1), 1, 1).to(device)
@@ -479,7 +484,8 @@ class FlowFieldPowerGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             t = torch.rand(len(g_1), 1, 1).expand(*g_1.shape[:-1], 1).to(device)
             g_0, g_1 = g_0.to(device), g_1.to(device)
