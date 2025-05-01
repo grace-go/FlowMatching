@@ -22,7 +22,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from lieflow.groups import Group, MatrixGroup
 
 
@@ -116,7 +116,8 @@ def get_model_SCFM(G: Group | MatrixGroup, H=64, L=2):
 #             total=N_batches,
 #             desc="Training",
 #             dynamic_ncols=True,
-#             unit="batch"
+#             unit="batch",
+#             leave=False,
 #         ):
 #             t = torch.rand(len(g_1), 1).to(device)
 #             g_0, g_1 = g_0.to(device), g_1.to(device)
@@ -165,6 +166,10 @@ class FlowFieldGroup(nn.Module):
         t = t.view(1, 1).expand(g_t.shape[0], 1)
         return self.G.L(g_t, self.G.exp(Δt * self(g_t, t)))
     
+    def step_back(self, g_t, t, Δt):
+        t = t.view(1, 1).expand(g_t.shape[0], 1)
+        return self.G.L(g_t, self.G.exp(-Δt * self(g_t, t)))
+    
     def train_network(self, device, train_loader, optimizer, loss):
         self.train()
         N_batches = len(train_loader)
@@ -174,7 +179,8 @@ class FlowFieldGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             t = torch.rand(len(g_1), 1).to(device)
             g_0, g_1 = g_0.to(device), g_1.to(device)
@@ -226,6 +232,11 @@ class ShortCutFieldGroup(nn.Module):
         Δt = Δt.view(1, 1).expand(g_t.shape[0], 1)
         return self.G.L(g_t, self.G.exp(Δt * self(g_t, t, Δt)))
     
+    def step_back(self, g_t, t, Δt):
+        t = t.view(1, 1).expand(g_t.shape[0], 1)
+        Δt = Δt.view(1, 1).expand(g_t.shape[0], 1)
+        return self.G.L(g_t, self.G.exp(-Δt * self(g_t, t, Δt)))
+    
     def train_network(self, device, train_loader, optimizer, loss, k=1/4):
         self.train()
         N_batches = len(train_loader)
@@ -235,7 +246,8 @@ class ShortCutFieldGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             N_total = len(g_1) # Total number of samples in batch.
             t = torch.rand(len(g_1), 1).to(device)
@@ -312,6 +324,14 @@ class FlowFieldMatrixGroup(nn.Module):
         A_t = (a_t[..., None, None] * basis).sum(-3)
         return self.G.L(R_t, self.G.exp(Δt * A_t))
     
+    def step_back(self, R_t, t, Δt):
+        t = t.view(1, 1).expand(R_t.shape[0], 1, 1)
+        # Components w.r.t. Lie algebra basis.
+        a_t = -self(R_t, t)
+        basis = self.G.lie_algebra_basis
+        A_t = (a_t[..., None, None] * basis).sum(-3)
+        return self.G.L(R_t, self.G.exp(Δt * A_t))
+    
     def train_network(self, device, train_loader, optimizer, loss):
         self.train()
         N_batches = len(train_loader)
@@ -321,7 +341,8 @@ class FlowFieldMatrixGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             t = torch.rand(len(R_1), 1, 1).to(device)
             R_0, R_1 = R_0.to(device), R_1.to(device)
@@ -382,6 +403,15 @@ class ShortCutFieldMatrixGroup(nn.Module):
         A_t = (a_t[..., None, None] * basis).sum(-3)
         return self.G.L(R_t, self.G.exp(Δt * A_t))
     
+    def step_back(self, R_t, t, Δt):
+        t = t.view(1, 1).expand(R_t.shape[0], 1, 1)
+        Δt = Δt.view(1, 1).expand(R_t.shape[0], 1, 1)
+        # Components w.r.t. Lie algebra basis.
+        a_t = -self(R_t, t, Δt)
+        basis = self.G.lie_algebra_basis
+        A_t = (a_t[..., None, None] * basis).sum(-3)
+        return self.G.L(R_t, self.G.exp(Δt * A_t))
+    
     def train_network(self, device, train_loader, optimizer, loss, k=1/4):
         self.train()
         N_batches = len(train_loader)
@@ -392,7 +422,8 @@ class ShortCutFieldMatrixGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             N_total = len(R_1) # Total number of samples in batch.
             t = torch.rand(len(R_1), 1, 1).to(device)
@@ -470,6 +501,10 @@ class FlowFieldPowerGroup(nn.Module):
         t = t.view(1, 1, 1).expand(*g_t.shape[:-1], 1)
         return self.G.L(g_t, self.G.exp(Δt * self(g_t, t)))
     
+    def step_back(self, g_t, t, Δt):
+        t = t.view(1, 1, 1).expand(*g_t.shape[:-1], 1)
+        return self.G.L(g_t, self.G.exp(-Δt * self(g_t, t)))
+    
     def train_network(self, device, train_loader, optimizer, loss):
         self.train()
         N_batches = len(train_loader)
@@ -479,7 +514,8 @@ class FlowFieldPowerGroup(nn.Module):
             total=N_batches,
             desc="Training",
             dynamic_ncols=True,
-            unit="batch"
+            unit="batch",
+            leave=False,
         ):
             t = torch.rand(len(g_1), 1, 1).expand(*g_1.shape[:-1], 1).to(device)
             g_0, g_1 = g_0.to(device), g_1.to(device)
